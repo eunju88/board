@@ -1,0 +1,107 @@
+CREATE TABLE 'board_db'.'board_conf' (
+  'board_conf_seq' INT(11) NOT NULL AUTO_INCREMENT COMMENT '게시판 관리 시퀀스',
+  'board_conf_name' VARCHAR(100) NULL COMMENT '게시판명',
+  'board_cnt' INT(4) NULL COMMENT '한 페이지에 노출될 수',
+  'board_paging_cnt' INT(4) NULL COMMENT '페이징 갯수',
+  'board_notice_view' CHAR(1) NULL COMMENT '공지사항 노출 여부(Y/N)',
+  'board_title_show_cnt' INT(11) NULL COMMENT '제목 글자 노출 갯수',
+  'board_hit_show' CHAR(1) NULL COMMENT '조회수 노출 여부(Y/N)',
+  'board_register_show' CHAR(1) NULL COMMENT '등록자 노출 여부',
+  'board_type' VARCHAR(10) NULL COMMENT '게시판 종류\n(nomal, poto, faq)',
+  'attached_conf' CHAR(1) NULL COMMENT '첨부파일 여부(Y/N)',
+  'reply_conf' CHAR(1) NULL COMMENT '댓글 여부(Y/N)',
+  'use_conf' CHAR(1) NULL COMMENT '사용여부(Y/N)',
+  PRIMARY KEY ('board_conf_seq'))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COMMENT = '게시판 관리';
+
+
+CREATE TABLE 'board_db'.'member' (
+  'member_seq' INT(11) NOT NULL AUTO_INCREMENT COMMENT '회원 시퀀스',
+  'member_id' VARCHAR(20) NULL COMMENT '회원 ID',
+  'member_pw' VARCHAR(200) NULL COMMENT '비밀번호(암호화)',
+  'member_name' VARCHAR(50) NULL COMMENT '이름(인코딩)',
+  'member_email' VARCHAR(200) NULL COMMENT '이메일(인코딩)',
+  'member_regidate' DATETIME NULL COMMENT '가입일',
+  'member_reg_ip' VARCHAR(20) NULL COMMENT '가입 IP',
+  'member_state' CHAR(1) NULL COMMENT '회원상태\nN : namal(정상), W : withdrawal(탈퇴), B : black(블랙리스트)',
+  PRIMARY KEY ('member_seq'),
+  UNIQUE INDEX 'member_id_UNIQUE' ('member_id' ASC))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COMMENT = '회원';
+
+
+CREATE TABLE 'board_db'.'board' (
+  'board_seq' INT(11) NOT NULL AUTO_INCREMENT COMMENT '게시글  시퀀스',
+  'board_name' VARCHAR(200) NULL COMMENT '게시글 제목',
+  'board_content' TEXT NULL COMMENT '게시글 내용',
+  'notice_flag' CHAR(1) NULL COMMENT '공지 여부',
+  'board_register' VARCHAR(20) NULL COMMENT '작성자',
+  'board_hit' INT(11) UNSIGNED NULL COMMENT '조회수',
+  'board_reg_date' DATETIME NULL COMMENT '등록일',
+  'board_mod_date' DATETIME NULL,
+  'board_conf_seq' INT(11) NULL COMMENT '게시판 설정 시퀀스',
+  'display_conf' CHAR(1) NULL COMMENT '노출여부(삭제여부)',
+  PRIMARY KEY ('board_seq'),
+  INDEX 'member_idx' ('board_register' ASC),
+  INDEX 'board_conf_fk_idx' ('board_conf_seq' ASC),
+  CONSTRAINT 'member_fk'
+    FOREIGN KEY ('board_register')
+    REFERENCES 'board_db'.'member' ('member_id')
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT 'board_conf_fk'
+    FOREIGN KEY ('board_conf_seq')
+    REFERENCES 'board_db'.'board_conf' ('board_conf_seq')
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COMMENT = '게시글';
+
+
+CREATE TABLE 'board_db'.'attached_file' (
+  'attached_seq' INT(11) NOT NULL AUTO_INCREMENT COMMENT '첨부파일 시퀀스',
+  'board_seq' INT(11) NULL COMMENT '게시글 시퀀스 (FK)',
+  'original_name' VARCHAR(150) NULL COMMENT '원본 이름',
+  'change_name' VARCHAR(150) NULL COMMENT '변경된 이름',
+  'file_type' VARCHAR(20) NULL COMMENT '파일종류(확장자)',
+  'file_size' INT(11) NULL COMMENT '파일크기',
+  'file_path' VARCHAR(200) NULL COMMENT '경로(파일 위치)',
+  PRIMARY KEY ('attached_seq'),
+  INDEX 'board_fk_idx' ('board_seq' ASC),
+  CONSTRAINT 'board_fk'
+    FOREIGN KEY ('board_seq')
+    REFERENCES 'board_db'.'board' ('board_seq')
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COMMENT = '첨부파일';
+
+
+CREATE TABLE 'board_db'.'reply' (
+  'reply_seq' INT(11) NOT NULL AUTO_INCREMENT COMMENT '댓글 시퀀스',
+  'board_seq' INT(11) NULL,
+  'reply_content' VARCHAR(500) NULL COMMENT '댓글내용',
+  'reply_register' VARCHAR(20) NULL COMMENT '작성자(FK)',
+  'reply_date' DATETIME NULL,
+  'reply_delete' CHAR(1) NULL COMMENT '삭제여부',
+  PRIMARY KEY ('reply_seq'),
+  INDEX 'board_fk_idx' ('board_seq' ASC),
+  INDEX 'member_fk_idx' ('reply_register' ASC),
+  CONSTRAINT 'board_reply_fk'
+    FOREIGN KEY ('board_seq')
+    REFERENCES 'board_db'.'board' ('board_seq')
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT 'mem_reply_fk'
+    FOREIGN KEY ('reply_register')
+    REFERENCES 'board_db'.'member' ('member_id')
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COMMENT = '댓글';
